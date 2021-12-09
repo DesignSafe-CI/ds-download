@@ -6,6 +6,7 @@ services:
     container_name: ds_download_server
     volumes:
       - ./server/:/srv/www/server/
+      - ~/corral-repl/tacc/NHERI:/corral-repl/tacc/NHERI
     ports:
       - 8000:8000
 
@@ -13,13 +14,15 @@ services:
     image: nginx
     volumes:
       - ./conf/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./conf/ssl/ds-download.test.crt:/etc/ssl/ds-download.test.crt
-      - ./conf/ssl/ds-download.test.key:/etc/ssl/ds-download.test.key
+      - ./conf/ssl/ds-download.test.crt:/etc/ssl/api.crt
+      - ./conf/ssl/ds-download.test.key:/etc/ssl/api.key
       - ./conf/nginx/dhparam.pem:/etc/ssl/dhparam.pem
     ports:
       - 80:80
       - 443:443
     container_name: ds_download_nginx
-    depends_on:
-      - cms
-      - django
+
+  redis:
+    image: redis:6.2-alpine
+    container_name: ds_download_redis
+    hostname: ds_download_redis

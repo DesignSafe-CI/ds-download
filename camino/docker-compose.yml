@@ -1,0 +1,37 @@
+version: '3.8'
+services:
+  server:
+    image: wmatacc/ds-download:deploy
+    command: gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+    container_name: ds_download_server
+    volumes:
+      - /corral-repl/tacc/NHERI:/corral-repl/tacc/NHERI
+    logging:
+      driver: syslog
+      options:
+        tag: ds_download_api
+
+  nginx:
+    image: nginx
+    volumes:
+      - ../conf/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - /etc/ssl/certs/designsafe-download01.tacc.utexas.edu.cer.20211206:/etc/ssl/api.crt
+      - /etc/ssl/private/designsafe-download01.tacc.utexas.edu.key.20211206:/etc/ssl/api.key
+      - /etc/ssl/dhparam.pem:/etc/ssl/dhparam.pem
+    ports:
+      - 80:80
+      - 443:443
+    container_name: ds_download_nginx
+    logging:
+      driver: syslog
+      options:
+        tag: ds_download_nginx
+
+  redis:
+    image: redis:6.2-alpine
+    container_name: ds_download_redis
+    hostname: ds_download_redis
+    logging:
+      driver: syslog
+      options:
+        tag: ds_download_redis
