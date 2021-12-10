@@ -1,11 +1,14 @@
-version: '3.8'
+version: "3.8"
 services:
   server:
     image: wmatacc/ds-download:deploy
-    command: gunicorn main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
+    command: gunicorn main:app --workers 4 --worker-class
+      uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
     container_name: ds_download_server
     volumes:
       - /corral-repl/tacc/NHERI:/corral-repl/tacc/NHERI
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
     logging:
       driver: syslog
       options:
@@ -31,6 +34,16 @@ services:
     image: redis:6.2-alpine
     container_name: ds_download_redis
     hostname: ds_download_redis
+    logging:
+      driver: syslog
+      options:
+        tag: ds_download_redis
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30 --label-enable
     logging:
       driver: syslog
       options:
