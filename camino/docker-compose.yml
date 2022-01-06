@@ -4,7 +4,7 @@ services:
     image: wmatacc/ds-download:deploy
     command: gunicorn main:app --workers 4 --worker-class
       uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000
-      --forwarded-allow-ips="0.0.0.0"
+      --forwarded-allow-ips="*"
     container_name: ds_download_server
     volumes:
       - /corral-repl/tacc/NHERI:/corral-repl/tacc/NHERI
