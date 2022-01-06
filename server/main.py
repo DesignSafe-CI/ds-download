@@ -26,7 +26,7 @@ class MessageReponse(BaseModel):
 
 @app.get("/", response_model=MessageReponse)
 def read_root(request: Request):
-    return {"message": f"Hello world, {request.client.host}"}
+    return {"message": f"Hello world from ip: {request.client.host}"}
 
 
 class TapisFile(BaseModel):
