@@ -1,0 +1,59 @@
+name: CI
+
+# Controls when the action will run. Triggers the workflow on pushes to main or on pull request events
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ '**' ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  Server_Side_Unit_Tests:
+    runs-on: ubuntu-18.04
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+
+    - uses: actions/cache@v2
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+    - name: Install Python Packages
+      run:  |
+        pip install -r requirements.txt
+        pip install pytest
+
+    - name: Run Server-side unit tests and generate coverage report
+      run: |
+        pytest server
+
+  Server_Side_Linting:
+    runs-on: ubuntu-18.04
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.10'
+
+    - uses: actions/cache@v2
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-pip-${{ hashFiles('**/requirements.txt') }}
+
+    - name: Install Black formatter
+      run:  |
+        pip install black
+
+    - name: Run Black formatter in check mode
+      run: |
+        black server --target-version py310 --check
