@@ -64,6 +64,12 @@ def test_walk_archive(tmp_path):
     ]
 
 
+def test_walk_archive_404(tmp_path):
+    base = tmp_path
+    with pytest.raises(HTTPException):
+        walk_archive_paths(base, ["nonexistent_file.txt"])
+
+
 @pytest.fixture
 def mock_get_success(monkeypatch, request):
     import requests

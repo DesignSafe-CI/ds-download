@@ -62,6 +62,7 @@ def walk_archive_paths(base_path: str, file_paths: List[str]) -> List[Archive]:
     size = 0
     for file in file_paths:
         full_path = base / file.strip("/")
+        print(full_path)
 
         if full_path.is_file():
             zip_paths.append({"fs": str(full_path), "n": full_path.name})
@@ -78,6 +79,12 @@ def walk_archive_paths(base_path: str, file_paths: List[str]) -> List[Archive]:
                 )
                 size += file_path.stat().st_size
                 raise_for_size(size)
+        else:
+            # No file/folder exists at the requested path, so raise a 404.
+            raise HTTPException(
+                status_code=404,
+                detail="One or more of the requested files could not be found.",
+            )
 
     return zip_paths
 
