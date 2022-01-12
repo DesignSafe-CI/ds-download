@@ -53,7 +53,7 @@ def raise_for_size(size: int, max_size: int = 2e9) -> None:
 
 class Archive(TypedDict):
     fs: str  # Represents the absolute path to a file on the host machine.
-    n: str  # Represents the path to a file relative to the zip archive root.
+    n: str  # Represents the path to a file within the zip archive.
 
 
 def walk_archive_paths(base_path: str, file_paths: List[str]) -> List[Archive]:
@@ -82,6 +82,24 @@ def walk_archive_paths(base_path: str, file_paths: List[str]) -> List[Archive]:
     return zip_paths
 
 
+def check_system_access(system: str, paths: List[str], token: str) -> None:
+    """
+    Confirm a user's READ access to files in a system by using their Tapis access token
+    to perform a listing at the files' common path.
+    """
+    try:
+        common_path = os.path.commonpath(map(lambda p: p.strip("/"), paths))
+        listing_url = (
+            f"{TAPIS_BASE_URL}"
+            "/files/v2/listings/system/"
+            f"{system}/{common_path}/?limit=1"
+        )
+        resp = requests.get(listing_url, headers={"Authorization": f"Bearer {token}"})
+        resp.raise_for_status()
+    except HTTPError:
+        raise HTTPException(status_code=resp.status_code, detail=resp.reason)
+
+
 class CheckResponse(BaseModel):
     key: str
 
@@ -97,33 +115,14 @@ def check_downloadable(
     auth: http.HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
 ):
     PUBLIC_SYSTEMS = ["designsafe.storage.community", "designsafe.storage.published"]
-    if request.system not in PUBLIC_SYSTEMS:
-
-        # Limit API to public systems for initial release.
+    if not auth and request.system not in PUBLIC_SYSTEMS:
         raise HTTPException(
-            status_code=403, detail="Private systems are currently disabled."
+            status_code=401,
+            detail="This resource cannot be accessed without Tapis credentials.",
         )
-        """
-        if not auth:
-            raise HTTPException(
-                status_code=401,
-                detail="Attempt to access private resource without auth credentials.",
-            )
-        try:
-            listing_url = (
-                f"{TAPIS_BASE_URL}"
-                "/files/v2/listings/system/"
-                f"{request.system}/{request.path.strip('/')}"
-            )
-            resp = requests.get(
-                listing_url, headers={"Authorization": f"Bearer {auth.credentials}"}
-            )
-            resp.raise_for_status()
-            return {"message": "success"}
-        except HTTPError:
-            print(resp.content)
-            raise HTTPException(status_code=403, detail=resp.json())
-        """
+    elif request.system not in PUBLIC_SYSTEMS:
+        check_system_access(request.system, request.paths, auth.credentials)
+
     system_root = get_system_root(request.system)
     paths = walk_archive_paths(system_root, request.paths)
 
