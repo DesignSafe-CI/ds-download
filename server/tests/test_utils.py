@@ -19,6 +19,10 @@ def test_get_system_root():
         == "/corral-repl/tacc/NHERI/published"
     )
     assert (
+        get_system_root("nees.public")
+        == "/corral-repl/tacc/NHERI/public/projects"
+    )
+    assert (
         get_system_root("project-7448086614930166251-242ac113-0001-012")
         == "/corral-repl/tacc/NHERI/projects/7448086614930166251-242ac113-0001-012"
     )
