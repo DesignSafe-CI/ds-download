@@ -37,6 +37,8 @@ def get_system_root(system: str) -> str:
             root_dir = "/corral-repl/tacc/NHERI/community"
         case "designsafe.storage.published":
             root_dir = "/corral-repl/tacc/NHERI/published"
+        case "nees.public":
+            root_dir = "/corral-repl/tacc/NHERI/public/projects"
         case prj_system if system.startswith("project-"):
             project_id = prj_system.split("-", 1)[1]
             root_dir = os.path.join("/corral-repl/tacc/NHERI/projects", project_id)
@@ -62,7 +64,6 @@ def walk_archive_paths(base_path: str, file_paths: List[str]) -> List[Archive]:
     size = 0
     for file in file_paths:
         full_path = base / file.strip("/")
-        print(full_path)
 
         if full_path.is_file():
             zip_paths.append({"fs": str(full_path), "n": full_path.name})
@@ -121,7 +122,11 @@ def check_downloadable(
     request: CheckRequest,
     auth: http.HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
 ):
-    PUBLIC_SYSTEMS = ["designsafe.storage.community", "designsafe.storage.published"]
+    PUBLIC_SYSTEMS = [
+        "designsafe.storage.community",
+        "designsafe.storage.published",
+        "nees.public",
+    ]
     if not auth and request.system not in PUBLIC_SYSTEMS:
         raise HTTPException(
             status_code=401,
