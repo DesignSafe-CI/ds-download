@@ -32,7 +32,7 @@ def read_root(request: Request):
 def get_system_root(system: str) -> str:
     match system:
         case "designsafe.storage.default":
-            root_dir = "/corral-repl/tacc/NHERI/shared"
+            root_dir = "/ds-mydata"
         case "designsafe.storage.community":
             root_dir = "/corral-repl/tacc/NHERI/community"
         case "designsafe.storage.published":
