@@ -33,6 +33,8 @@ def get_system_root(system: str) -> str:
     match system:
         case "designsafe.storage.default":
             root_dir = "/ds-mydata"
+        case "designsafe.storage.frontera.scratch":
+            root_dir = "/frontera-scratch"
         case "designsafe.storage.community":
             root_dir = "/corral-repl/tacc/NHERI/community"
         case "designsafe.storage.published":
@@ -95,13 +97,19 @@ def check_system_access(system: str, paths: List[str], token: str) -> None:
     Confirm a user's READ access to files in a system by using their Tapis access token
     to perform a listing at the files' common path.
     """
-    try:
-        common_path = os.path.commonpath(map(lambda p: p.strip("/"), paths))
-        listing_url = (
-            f"{TAPIS_BASE_URL}"
-            "/files/v2/listings/system/"
-            f"{system}/{common_path}/?limit=1"
+
+    common_path = os.path.commonpath(map(lambda p: p.strip("/"), paths))
+    if common_path == "" and not system.startswith("project-"):
+        raise HTTPException(
+            status_code=403,
+            detail="Detected a possible attempt to access multiple home directories.",
         )
+    listing_url = (
+        f"{TAPIS_BASE_URL}"
+        "/files/v2/listings/system/"
+        f"{system}/{common_path}/?limit=1"
+    )
+    try:
         resp = requests.get(listing_url, headers={"Authorization": f"Bearer {token}"})
         resp.raise_for_status()
     except HTTPError:

@@ -124,3 +124,11 @@ def test_check_system_access_failure(mock_get_error, monkeypatch):
         "tapis.test/files/v2/listings/system/test.system/tmp/?limit=1",
         headers={"Authorization": f"Bearer {'ABC123'}"},
     )
+
+
+def test_check_system_access_403():
+    with pytest.raises(HTTPException) as excinfo:
+        check_system_access(
+            "designsafe.storage.default", ["/user1/file1", "/user2/file2"], "ABC123"
+        )
+    assert excinfo.value.status_code == 403
