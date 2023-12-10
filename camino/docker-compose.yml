@@ -10,6 +10,7 @@ services:
       - /corral-repl/tacc/NHERI:/corral-repl/tacc/NHERI
       - /ds-mydata:/ds-mydata
       - /frontera-scratch:/frontera-scratch
+      - /frontera-work:/frontera-work
     labels:
       - "com.centurylinklabs.watchtower.enable=true"
     logging:

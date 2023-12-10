@@ -35,6 +35,8 @@ def get_system_root(system: str) -> str:
             root_dir = "/ds-mydata"
         case "designsafe.storage.frontera.scratch":
             root_dir = "/frontera-scratch"
+        case "designsafe.storage.frontera.work":
+            root_dir = "/frontera-work"
         case "designsafe.storage.community":
             root_dir = "/corral-repl/tacc/NHERI/community"
         case "designsafe.storage.published":
