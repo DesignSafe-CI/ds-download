@@ -117,7 +117,7 @@ def check_system_access(system: str, paths: List[str], token: str) -> None:
         resp.raise_for_status()
     except HTTPError:
         raise HTTPException(status_code=resp.status_code, detail=resp.reason)
-    
+
 
 def check_system_access_v3(system: str, paths: List[str], token: str) -> None:
     """
@@ -132,9 +132,7 @@ def check_system_access_v3(system: str, paths: List[str], token: str) -> None:
             detail="Detected a possible attempt to access multiple home directories.",
         )
     listing_url = (
-        f"{TAPIS_V3_BASE_URL}"
-        "/v3/files/ops/"
-        f"{system}/{common_path}/?limit=1"
+        f"{TAPIS_V3_BASE_URL}" "/v3/files/ops/" f"{system}/{common_path}/?limit=1"
     )
     try:
         resp = requests.get(listing_url, headers={"x-tapis-token": token})
