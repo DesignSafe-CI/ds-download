@@ -1,5 +1,5 @@
-from typing import List, TypedDict
-from fastapi import FastAPI, HTTPException, Request
+from typing import List, TypedDict, Annotated
+from fastapi import FastAPI, HTTPException, Request, Header
 from fastapi.param_functions import Depends
 from fastapi.responses import StreamingResponse, FileResponse
 from fastapi.security import HTTPBearer, http
@@ -15,6 +15,7 @@ import requests
 
 r = redis.Redis(host="ds_download_redis", port=6379, db=0)
 TAPIS_BASE_URL = "https://agave.designsafe-ci.org"
+TAPIS_V3_BASE_URL = "https://designsafe.tapis.io"
 
 
 app = FastAPI()
@@ -116,6 +117,30 @@ def check_system_access(system: str, paths: List[str], token: str) -> None:
         resp.raise_for_status()
     except HTTPError:
         raise HTTPException(status_code=resp.status_code, detail=resp.reason)
+    
+
+def check_system_access_v3(system: str, paths: List[str], token: str) -> None:
+    """
+    Confirm a user's READ access to files in a system by using their Tapis access token
+    to perform a listing at the files' common path.
+    """
+
+    common_path = os.path.commonpath(map(lambda p: p.strip("/"), paths))
+    if common_path == "" and not system.startswith("project-"):
+        raise HTTPException(
+            status_code=403,
+            detail="Detected a possible attempt to access multiple home directories.",
+        )
+    listing_url = (
+        f"{TAPIS_V3_BASE_URL}"
+        "/v3/files/ops/"
+        f"{system}/{common_path}/?limit=1"
+    )
+    try:
+        resp = requests.get(listing_url, headers={"x-tapis-token": token})
+        resp.raise_for_status()
+    except HTTPError:
+        raise HTTPException(status_code=resp.status_code, detail=resp.reason)
 
 
 class CheckResponse(BaseModel):
@@ -130,6 +155,7 @@ class CheckRequest(BaseModel):
 @app.put("/check", response_model=CheckResponse)
 def check_downloadable(
     request: CheckRequest,
+    x_tapis_token: Annotated[str | None, Header()] = None,
     auth: http.HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
 ):
     PUBLIC_SYSTEMS = [
@@ -137,13 +163,16 @@ def check_downloadable(
         "designsafe.storage.published",
         "nees.public",
     ]
-    if not auth and request.system not in PUBLIC_SYSTEMS:
+    if not (auth or x_tapis_token) and request.system not in PUBLIC_SYSTEMS:
         raise HTTPException(
             status_code=401,
             detail="This resource cannot be accessed without Tapis credentials.",
         )
     elif request.system not in PUBLIC_SYSTEMS:
-        check_system_access(request.system, request.paths, auth.credentials)
+        if x_tapis_token:
+            check_system_access_v3(request.system, request.paths, x_tapis_token)
+        else:
+            check_system_access(request.system, request.paths, auth.credentials)
 
     system_root = get_system_root(request.system)
     paths = walk_archive_paths(system_root, request.paths)
