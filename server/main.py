@@ -1,4 +1,4 @@
-from typing import List, TypedDict, Annotated
+from typing import List, TypedDict, Annotated, Optional
 from fastapi import FastAPI, HTTPException, Request, Header
 from fastapi.param_functions import Depends
 from fastapi.responses import StreamingResponse, FileResponse
@@ -76,7 +76,9 @@ def walk_archive_paths(base_path: str, file_paths: List[str]) -> List[Archive]:
             raise_for_size(size)
 
         elif full_path.is_dir():
-            for file_path in filter(lambda f: f.is_file(), full_path.glob("**/*")):
+            for file_path in filter(
+                lambda f: f.is_file(), full_path.glob("**/*", recurse_symlinks=True)
+            ):
                 zip_paths.append(
                     {
                         "fs": str(file_path),
@@ -190,7 +192,7 @@ def check_downloadable(
         }
     },
 )
-def download_file(key: str):
+def download_file(key: str, filename: Optional[str] = None):
     key_json = r.get(key)
 
     if not key_json:
@@ -208,8 +210,13 @@ def download_file(key: str):
 
     zfly = zipfly.ZipFly(paths=paths)
     generator = zfly.generator()
+
+    download_filename = filename
+    if not filename:
+        download_filename = "download.zip"
+
     return StreamingResponse(
         generator,
-        headers={"Content-Disposition": "attachment; filename=download.zip"},
+        headers={"Content-Disposition": f"attachment; filename={download_filename}"},
         media_type="application/zip",
     )
