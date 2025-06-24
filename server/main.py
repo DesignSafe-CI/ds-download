@@ -53,9 +53,9 @@ def get_system_root(system: str) -> str:
     return root_dir
 
 
-def raise_for_size(size: int, max_size: int = 2e9) -> None:
+def raise_for_size(size: int, max_size: int = 5e9) -> None:
     if size > max_size:
-        raise HTTPException(status_code=413, detail="Archive size is limited to 2Gb.")
+        raise HTTPException(status_code=413, detail="Archive size is limited to 5Gb.")
 
 
 class Archive(TypedDict):
