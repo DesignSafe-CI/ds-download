@@ -1,4 +1,3 @@
-version: '3.8'
 services:
   server:
     build: .
@@ -23,6 +22,6 @@ services:
     container_name: ds_download_nginx
 
   redis:
-    image: redis:6.2-alpine
+    image: redis:7-alpine
     container_name: ds_download_redis
     hostname: ds_download_redis

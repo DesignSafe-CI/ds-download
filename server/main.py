@@ -1,17 +1,18 @@
-from typing import List, TypedDict, Annotated, Optional
-from fastapi import FastAPI, HTTPException, Request, Header
-from fastapi.param_functions import Depends
-from fastapi.responses import StreamingResponse, FileResponse
-from fastapi.security import HTTPBearer, http
-from pydantic import BaseModel
-from requests.models import HTTPError
-import zipfly
-import redis
 import json
 import os
 from pathlib import Path
+from typing import Annotated, TypedDict
 from uuid import uuid4
+
+import redis
 import requests
+import zipfly
+from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi.param_functions import Depends
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.security import HTTPBearer, http
+from pydantic import BaseModel
+from requests.models import HTTPError
 
 r = redis.Redis(host="ds_download_redis", port=6379, db=0)
 TAPIS_BASE_URL = "https://agave.designsafe-ci.org"
@@ -33,7 +34,7 @@ def read_root(request: Request):
 def get_system_root(system: str) -> str:
     match system:
         case "designsafe.storage.default":
-            root_dir = "/ds-mydata"
+            root_dir = "/corral-repl/tacc/NHERI/shared"
         case "designsafe.storage.frontera.scratch":
             root_dir = "/frontera-scratch"
         case "designsafe.storage.frontera.work":
@@ -63,7 +64,7 @@ class Archive(TypedDict):
     n: str  # Represents the path to a file within the zip archive.
 
 
-def walk_archive_paths(base_path: str, file_paths: List[str]) -> List[Archive]:
+def walk_archive_paths(base_path: str, file_paths: list[str]) -> list[Archive]:
     base = Path(base_path)
     zip_paths = []
     size = 0
@@ -97,22 +98,20 @@ def walk_archive_paths(base_path: str, file_paths: List[str]) -> List[Archive]:
     return zip_paths
 
 
-def check_system_access(system: str, paths: List[str], token: str) -> None:
+def check_system_access(system: str, paths: list[str], token: str) -> None:
     """
     Confirm a user's READ access to files in a system by using their Tapis access token
     to perform a listing at the files' common path.
     """
 
-    common_path = os.path.commonpath(map(lambda p: p.strip("/"), paths))
+    common_path = os.path.commonpath(p.strip("/") for p in paths)
     if common_path == "" and not system.startswith("project-"):
         raise HTTPException(
             status_code=403,
             detail="Detected a possible attempt to access multiple home directories.",
         )
     listing_url = (
-        f"{TAPIS_BASE_URL}"
-        "/files/v2/listings/system/"
-        f"{system}/{common_path}/?limit=1"
+        f"{TAPIS_BASE_URL}/files/v2/listings/system/{system}/{common_path}/?limit=1"
     )
     try:
         resp = requests.get(listing_url, headers={"Authorization": f"Bearer {token}"})
@@ -121,21 +120,19 @@ def check_system_access(system: str, paths: List[str], token: str) -> None:
         raise HTTPException(status_code=resp.status_code, detail=resp.reason)
 
 
-def check_system_access_v3(system: str, paths: List[str], token: str) -> None:
+def check_system_access_v3(system: str, paths: list[str], token: str) -> None:
     """
     Confirm a user's READ access to files in a system by using their Tapis access token
     to perform a listing at the files' common path.
     """
 
-    common_path = os.path.commonpath(map(lambda p: p.strip("/"), paths))
+    common_path = os.path.commonpath(p.strip("/") for p in paths)
     if common_path == "" and not system.startswith("project-"):
         raise HTTPException(
             status_code=403,
             detail="Detected a possible attempt to access multiple home directories.",
         )
-    listing_url = (
-        f"{TAPIS_V3_BASE_URL}" "/v3/files/ops/" f"{system}/{common_path}/?limit=1"
-    )
+    listing_url = f"{TAPIS_V3_BASE_URL}/v3/files/ops/{system}/{common_path}/?limit=1"
     try:
         resp = requests.get(listing_url, headers={"x-tapis-token": token})
         resp.raise_for_status()
@@ -149,14 +146,17 @@ class CheckResponse(BaseModel):
 
 class CheckRequest(BaseModel):
     system: str
-    paths: List[str]
+    paths: list[str]
+
+
+security = HTTPBearer(auto_error=False)
 
 
 @app.put("/check", response_model=CheckResponse)
 def check_downloadable(
     request: CheckRequest,
     x_tapis_token: Annotated[str | None, Header()] = None,
-    auth: http.HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
+    auth: Annotated[http.HTTPAuthorizationCredentials | None, Depends(security)] = None,
 ):
     PUBLIC_SYSTEMS = [
         "designsafe.storage.community",
@@ -192,13 +192,13 @@ def check_downloadable(
         }
     },
 )
-def download_file(key: str, filename: Optional[str] = None):
+def download_file(key: str, filename: str | None = None):
     key_json = r.get(key)
 
     if not key_json:
         raise HTTPException(status_code=404, detail="Invalid download link.")
 
-    paths: List[Archive] = json.loads(key_json)
+    paths: list[Archive] = json.loads(key_json)
     r.delete(key)
 
     if len(paths) == 1:

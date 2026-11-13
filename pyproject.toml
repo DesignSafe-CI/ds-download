@@ -1,26 +1,35 @@
-[tool.poetry]
-name = "ds-downloads"
-package-mode = false
+[project]
+name = "ds-download"
 version = "0.1.0"
-description = ""
-authors = ["Jarosenb <jrosenberg@tacc.utexas.edu>"]
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Jake Rosenberg", email = "jrosenberg@tacc.utexas.edu" }
+]
+requires-python = ">=3.13"
 
-[tool.poetry.dependencies]
-python = "^3.13"
-uvicorn = {extras = ["standard"], version = "^0.24.0"}
-fastapi = "^0.104.1"
-redis = "^4.0.2"
-zipfly = "^6.0.3"
-gunicorn = "^20.1.0"
-paramiko = "^3.3.1"
-requests = "^2.31.0"
-ipython = "^8.17.2"
-pickleshare = "^0.7.5"
+dependencies = [
+    "fastapi[standard]>=0.162.7",
+    "gunicorn>=27.0.1",
+    "ipython>=9.18.1",
+    "paramiko>=5.1.0",
+    "pickleshare>=0.7.5",
+    "redis>=8.1.0",
+    "requests>=2.34.2",
+    "uvicorn>=0.54.0",
+    "zipfly>=6.0.5",
+]
 
-[tool.poetry.group.dev.dependencies]
-black = "^23.11.0"
-pytest = "^6.2.5"
+[tool.uv]
+package = false
+
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.13.5,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "ruff>=0.17.5",
+]

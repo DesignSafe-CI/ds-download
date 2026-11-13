@@ -1,12 +1,17 @@
-import pytest
 import os
+from unittest.mock import create_autospec
+
+import pytest
 from fastapi.exceptions import HTTPException
-from unittest.mock import MagicMock, create_autospec
-from server.main import get_system_root, walk_archive_paths, check_system_access
+
+from server.main import check_system_access, get_system_root, walk_archive_paths
 
 
 def test_get_system_root():
-    assert get_system_root("designsafe.storage.default") == "/ds-mydata"
+    assert (
+        get_system_root("designsafe.storage.default")
+        == "/corral-repl/tacc/NHERI/shared"
+    )
     assert (
         get_system_root("designsafe.storage.community")
         == "/corral-repl/tacc/NHERI/community"
@@ -102,7 +107,7 @@ def test_check_system_access_success(mock_get_success, monkeypatch):
         check_system_access(
             "test.system", ["/tmp/file1.txt", "/tmp/tmp2/file2.txt"], "ABC123"
         )
-    except Exception:
+    except Exception:  # noqa
         assert 0
 
     mock_get_success.assert_called_with(
