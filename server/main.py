@@ -34,7 +34,7 @@ def read_root(request: Request):
 def get_system_root(system: str) -> str:
     match system:
         case "designsafe.storage.default":
-            root_dir = "/ds-mydata"
+            root_dir = "/corral-repl/tacc/NHERI/shared"
         case "designsafe.storage.frontera.scratch":
             root_dir = "/frontera-scratch"
         case "designsafe.storage.frontera.work":

@@ -8,7 +8,10 @@ from server.main import check_system_access, get_system_root, walk_archive_paths
 
 
 def test_get_system_root():
-    assert get_system_root("designsafe.storage.default") == "/ds-mydata"
+    assert (
+        get_system_root("designsafe.storage.default")
+        == "/corral-repl/tacc/NHERI/shared"
+    )
     assert (
         get_system_root("designsafe.storage.community")
         == "/corral-repl/tacc/NHERI/community"
